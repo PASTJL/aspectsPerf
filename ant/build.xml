@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="aspectsPerf" default="deploy" basedir="..">
+	<echo>basedir=${basedir}</echo>
+	<property name="build" value="bin" />
+	<property name="dist" value="dist" />
+	<property name="src" value="src" />
+	<property name="projet" value="aspectsPerf" />
+	<property name="deploy" value="${basedir}" />
+
+
+	
+
+	<target name="unzipZip">
+		<delete dir="${basedir}/unzipZip/aspectjweaver" />
+		<delete dir="${basedir}/unzipZip/spring-agent" />
+		<delete dir="${basedir}/unzipZip/spring-loader" />
+		<mkdir dir="${basedir}/unzipZip/aspectjweaver" />
+		<mkdir dir="${basedir}/unzipZip/spring-agent" />
+		<mkdir dir="${basedir}/unzipZip/spring-loader" />
+
+		<unzip src="${basedir}/lib/aspectjweaver.jar" dest="${basedir}/unzipZip/aspectjweaver" overwrite="true" />
+		<unzip src="${basedir}/lib/spring-agent.jar" dest="${basedir}/unzipZip/spring-agent" overwrite="true" />
+		<unzip src="${basedir}/lib/spring-instrument-tomcat-3.1.2.RELEASE.jar" dest="${basedir}/unzipZip/spring-loader" overwrite="true" />
+
+		<delete file="${basedir}/lib/myprepareaspectjweaver.jar">
+		</delete>
+		<delete file="${basedir}/lib/mypreparespring-agent.jar">
+		</delete>
+		<copy tofile="${basedir}/lib/myprepareaspectjweaver.jar" file="${basedir}/lib/aspectjweaver.jar" />
+		<copy tofile="${basedir}/lib/mypreparespring-agent.jar" file="${basedir}/lib/spring-agent.jar" />
+		<zip destfile="${basedir}/lib/myprepareaspectjweaver.jar" update="true" basedir="${basedir}/unzipZip/spring-agent" excludes="META-INF/*.*" />
+		<zip destfile="${basedir}/lib/myprepareaspectjweaver.jar" update="true" basedir="${basedir}/unzipZip/spring-loader" excludes="META-INF/*.*" />
+		<zip destfile="${basedir}/lib/mypreparespring-agent.jar" update="true" basedir="${basedir}/unzipZip/aspectjweaver" excludes="META-INF/*.*" />
+		<zip destfile="${basedir}/lib/mypreparespring-agent.jar" update="true" basedir="${basedir}/unzipZip/spring-loader" excludes="META-INF/*.*" />
+	</target>
+
+	<target name="init" depends="prepare">
+		<path id="ajde.classpath">
+
+			<pathelement path="${basedir}/lib/aspectjweaver.jar" />
+			<pathelement path="${basedir}/lib/aspectjrt.jar" />
+			<pathelement path="${basedir}/lib/aspectjtools.jar" />
+			<pathelement path="${basedir}/lib/emory-util-collections.jar" />
+
+			<pathelement path="${basedir}/lib/jsch-0.1.46.jar" />
+			<pathelement path="C:\Program Files\Java\jdk1.6.0_31\lib\tools.jar" />
+			<pathelement path="C:\Program Files\Java\jdk1.6.0_38\lib\tools.jar" />
+			<pathelement path="${basedir}/exemple1.jar" />
+		</path>
+		<path id="ajde.fullclasspath">
+
+			<pathelement path="${basedir}/lib/aspectjweaver.jar" />
+			<pathelement path="${basedir}/lib/aspectjrt.jar" />
+			<pathelement path="${basedir}/lib/aspectjtools.jar" />
+			<pathelement path="${basedir}/lib/emory-util-collections.jar" />
+			<pathelement path="${basedir}/libExt/commons-pool-1.6.jar" />
+			<pathelement path="${basedir}/libExt/commons-dbcp-1.4.jar" />
+
+
+			<pathelement path="${basedir}/libExt/c3p0-0.9.2-pre6.jar" />
+			<pathelement path="${basedir}/lib/jsch-0.1.46.jar" />
+			<pathelement path="C:\Program Files\Java\jdk1.6.0_38\lib\tools.jar" />
+			<pathelement path="${basedir}/exemple1.jar" />
+		</path>
+		<taskdef resource="org/aspectj/tools/ant/taskdefs/aspectjTaskdefs.properties">
+			<classpath refid="ajde.classpath" />
+		</taskdef>
+	</target>
+
+	<target name="compile" depends="init,unzipZip">
+
+		<copy todir="${build}">
+			<fileset dir="${basedir}/src" includes="META-INF/*">
+			</fileset>
+		</copy>
+
+
+		<iajc version="true">
+		</iajc>
+		<javac srcdir="${basedir}/src" destDir="${basedir}/${build}" debug="On" classpathref="ajde.fullclasspath" includes="jlp\aspectj\test\Testing*.java,jlp\perf\aspects\util\*.java,jlp\perf\aspects\gui\*.java" source="1.5" target="1.5" verbose="true" fork="true" />
+		<iajc destDir="${basedir}/${build}" failonerror="true" argfiles="src/args3.lst" source="1.5" target="1.5" verbose="true" fork="true" maxmem="512m">
+
+
+			<forkclasspath refid="ajde.classpath" />
+
+		</iajc>
+
+		<javac srcdir="${basedir}/src" destDir="${basedir}/${build}" debug="On" classpathref="ajde.fullclasspath" includes="jlp\aspectj\test\Testing*.java,jlp\perf\aspects\abstractAspects\*.java,jlp\perf\aspects\util\*.java,jlp\perf\aspects\gui\*.java" source="1.5" target="1.5" verbose="true" fork="true" />
+
+		<jar destfile="${basedir}/aspectsPerf.jar" basedir="${basedir}/${build}" includes="jlp/**/*.class,jlp/helper/*.class" />
+
+
+		<jar destfile="${basedir}/exemple1.jar" basedir="${basedir}/${build}" includes="jlp/exemple1/**/*.class" />
+	</target>
+
+	<target name="deploy" depends="compile">
+		
+		
+
+		<!--Creation archive complete myaspectjweaver.jar-->
+		<zip destfile="${deploy}/lib/myaspectjweaver.jar" update="true" basedir="${basedir}/${build}" includes="iep/perf/aspects/**/*.class" />
+		<zip destfile="${deploy}/lib/myaspectjweaver.jar" update="true" basedir="${basedir}/${build}" includes="jlp/**/*.class" />
+		<zip destfile="${deploy}/lib/myaspectjweaver.jar" update="true" basedir="${basedir}/${build}" includes="attachapi/launcher/**/*.class" />
+		<zip destfile="${deploy}/lib/myaspectjweaver.jar" update="true" basedir="${basedir}/${build}" includes="org/aspectj/weaver/loadtime/**/*.class" />
+
+		<!--zip destfile="${deploy}/lib/myaspectjweaver.jar"  update="true" basedir="${basedir}/src" excludes="META-INF/MANIFEST.MF" includes="META-INF/*.*"/-->
+		<zip destfile="${deploy}/lib/myaspectjweaver.jar" update="true" basedir="${basedir}/src" excludes="META-INF/*.MF" includes="META-INF/*.*" />
+
+
+		<!--Creation archive complete springmyaspectweaver.jar-->
+		<zip destfile="${deploy}/lib/springmyaspectjweaver.jar" update="true" basedir="${basedir}/${build}" includes="iep/perf/aspects/**/*.class" />
+		<zip destfile="${deploy}/lib/springmyaspectjweaver.jar" update="true" basedir="${basedir}/${build}" includes="jlp/**/*.class" />
+		<zip destfile="${deploy}/lib/springmyaspectjweaver.jar" update="true" basedir="${basedir}/${build}" includes="attachapi/launcher/**/*.class" />
+		<zip destfile="${deploy}/lib/springmyaspectjweaver.jar" update="true" basedir="${basedir}/${build}" includes="org/aspectj/weaver/loadtime/**/*.class" />
+
+		<zip destfile="${deploy}/lib/springmyaspectjweaver.jar" update="true" basedir="${basedir}/src/spring" includes="org/springframework/**/*.class" />
+		<zip destfile="${deploy}/lib/springmyaspectjweaver.jar" update="true" basedir="${basedir}/src/spring" excludes="META-INF/*.MF" includes="META-INF/*.*" />
+
+		<jar destfile="${basedir}/aspectsPerf.zip" basedir="${basedir}" includes="aspectsPerf.jar,config/*.*,scripts/*.*,docs/*.pdf,lib/*.*,Licenses/*.*,templates/**/*.*" />
+
+	</target>
+	
+	<target name="prepare" depends="clean, prepare1" if="E_target">
+		<mkdir dir="${build}" />
+		<property name="deploy" value="D:\opt\aspectsPerf" />
+		<property name="eclipse" value="D:\eclipse" />
+		<echo>eclipse=${eclipse}</echo>
+	</target>
+
+	<target name="prepare1" if="C_target">
+		<mkdir dir="${build}" />
+		<property name="deploy" value="C:\opt\aspectsPerf" />
+
+		<property name="eclipse" value="C:\eclipse" />
+		<echo>eclipse=${eclipse}</echo>
+
+	</target>
+	<target name="clean">
+		<delete dir="${build}" />
+		<delete dir="${dist}" />
+
+		<!--delete>
+			<fileset dir="${basedir}" includes="**/*.class" />
+		</delete-->
+	</target>
+
+
+
+
+
+
+
+
+</project>

@@ -1,0 +1,17 @@
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.8.2
+Created-By: 1.6.0_33-b03-424-11M3720 (Apple Inc.)
+Export-Package: org.springframework.instrument.classloading;version="3
+ .1.2.RELEASE",org.springframework.instrument.classloading.tomcat;vers
+ ion="3.1.2.RELEASE";uses:="org.apache.catalina.loader"
+Bundle-Vendor: SpringSource
+Bundle-Version: 3.1.2.RELEASE
+Tool: Bundlor 1.0.0.RELEASE
+Bundle-Name: Spring Instrument Tomcat Weaver
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: org.springframework.instrument.tomcat
+Import-Package: org.apache.catalina.loader;version="[6.0.16, 7.0.0)"
+Bundle-Creator: cbeams
+Implementation-Title: org.springframework.instrument.tomcat
+Implementation-Version: 3.1.2.RELEASE
+

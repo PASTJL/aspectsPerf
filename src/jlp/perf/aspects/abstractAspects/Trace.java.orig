@@ -1,0 +1,287 @@
+package iep.perf.jvm14.abstractAspects;
+
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.zip.GZIPOutputStream;
+import sun.misc.*;
+
+public class Trace implements  Observer, Runnable {
+	// private PrintWriter myPrintWriter;
+	private String fileLogs=null;
+	private BufferedWriter buffOut = null;
+	private SimpleDateFormat sdf = new SimpleDateFormat(
+			"yyyy/MM/dd HH:mm:ss.SSS");
+	public boolean isZipped = false;
+	public FileOutputStream fos = null;
+	public GZIPOutputStream gzOs = null;
+	private static Runtime runtime = Runtime.getRuntime();
+	public final static SignalHandler sh=new SignalHandler();
+	public static boolean exiting=false;
+
+	public Trace(String nomFileLogs) {
+		System.out.println("Deb Creation Trace os.name = "+System.getProperty("os.name").toUpperCase());
+		if ( System.getProperty("os.name").toUpperCase().indexOf("WINDOW")>=0)
+		{
+			sh.handleSignal("INT");
+			sh.addObserver(this);
+		}
+		else
+		{
+			if (System.getProperty("os.name").toUpperCase().indexOf("AIX")<0)
+			{
+			sh.handleSignal("HUP");
+			sh.addObserver(this);
+			}
+		}
+		
+		
+		fileLogs=nomFileLogs;
+		
+		runtime.addShutdownHook(new Thread(this));
+		
+		int i=nomFileLogs.lastIndexOf(".");
+		SimpleDateFormat sdf2=new SimpleDateFormat("yyyyMMdd_HHmmss");
+		String dateF=sdf2.format(
+				Calendar.getInstance().getTime());
+		nomFileLogs=nomFileLogs.substring(0,i)+"_"+dateF+"."+nomFileLogs.substring(i+1);
+		System.out.println ( "iep.perf.jvm14.abstractAspects.Trace nomFileLogs =  "+nomFileLogs);
+		try {
+
+			if ("false".equals(PerfStatProperties.perfStatProperties
+					.getProperty("perfStats.default.filegzip"))) {
+				// myPrintWriter=new PrintWriter(new BufferedWriter(new
+				// FileWriter(nomFileLogs,true)));
+				buffOut = new BufferedWriter(new FileWriter(nomFileLogs, true));
+				isZipped = false;
+			} else {
+			
+				fos = new FileOutputStream(nomFileLogs + ".gz", true);
+				isZipped = true;
+				// myPrintWriter=new PrintWriter(new BufferedWriter (new
+				// OutputStreamWriter( new GZIPOutputStream(fos))));
+				gzOs = new GZIPOutputStream(fos);
+				buffOut = new BufferedWriter(new OutputStreamWriter(gzOs));
+
+			}
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public synchronized void reouverture()
+	{
+		try {
+			int i=this.fileLogs.lastIndexOf(".");
+			SimpleDateFormat sdf2=new SimpleDateFormat("yyyyMMdd_HHmmss");
+			String dateF=sdf2.format(
+					Calendar.getInstance().getTime());
+			String nomFileLogs=this.fileLogs.substring(0,i)+"_"+dateF+"."+this.fileLogs.substring(i+1);
+			if ("false".equals(PerfStatProperties.perfStatProperties
+					.getProperty("perfStats.default.filegzip"))) {
+				// myPrintWriter=new PrintWriter(new BufferedWriter(new
+				// FileWriter(nomFileLogs,true)));
+				buffOut = new BufferedWriter(new FileWriter(nomFileLogs, true));
+				isZipped = false;
+			} else {
+				fos = new FileOutputStream(nomFileLogs + ".gz", true);
+				isZipped = true;
+				// myPrintWriter=new PrintWriter(new BufferedWriter (new
+				// OutputStreamWriter( new GZIPOutputStream(fos))));
+				gzOs = new GZIPOutputStream(fos);
+				buffOut = new BufferedWriter(new OutputStreamWriter(gzOs));
+
+			}
+			
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	public synchronized void append(String myString) {
+		// myPrintWriter.write(myString);
+		if (null != buffOut) {
+			try {
+
+				buffOut.write(myString);
+				
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+		else
+		{
+			//reouverture
+	/*	reouverture();
+			try{
+				buffOut.write(myString);
+				flush();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}*/
+		}
+	}
+
+	public synchronized void flush() {
+		// myPrintWriter.flush();
+		try {
+			//
+
+			gzOs.flush();
+			buffOut.flush();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public SimpleDateFormat getSdf() {
+		return sdf;
+	}
+
+	public void setSdf(SimpleDateFormat sdf) {
+		this.sdf = sdf;
+	}
+
+	public BufferedWriter getBuffOut() {
+		return buffOut;
+	}
+
+	public void setBuffOut(BufferedWriter buffOut) {
+		this.buffOut = buffOut;
+	}
+
+	public  void run() {
+
+		System.out.println("Lance un control C");
+		System.out.println("Fermeture des OutpuStreams");
+		try {
+			if (null != buffOut) {
+				buffOut.close();
+				buffOut = null;
+				Thread.sleep(500);
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+	public  synchronized void update( final Observable o,
+			final Object arg )
+			{
+			// use the same method that the Timer employs to trigger a
+			// rotation, which ensures that signal and timer don't screw
+			// each other up.
+			System.out.println( "Received signal: "+arg );
+			try {
+				if (null != buffOut) {
+					buffOut.close();
+					buffOut = null;
+					Thread.sleep(500);
+					System.out.println("Fermeture des flux en cours et reouverture de nouveaux");
+					
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			if ( System.getProperty("os.name").toUpperCase().indexOf("WINDOW")>=0)
+			{
+				System.out.println("Continuer (O/N) : ?");
+				int read1=0,read2=0;
+				try {
+					read1 = System.in.read();
+					while( !exiting && (read2=System.in.read()) != (int) '\n')
+					{
+						Thread.sleep(100);
+					}
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				if ((read1 != (int) 'O' && read1 != 'o'))
+				{
+					exiting=true;
+					System.exit(0);
+				}
+				else
+				{
+					if(!exiting)
+					{
+					reouverture();
+					}
+				}
+			
+			}
+			else
+			{
+				reouverture();
+			}
+			
+			}
+
+}
+class SignalHandler extends Observable implements sun.misc.SignalHandler
+{
+	public void handleSignal( final String signalName )
+	throws IllegalArgumentException
+	{
+	try
+	{
+	sun.misc.Signal.handle( new sun.misc.Signal(signalName), this );
+	}
+	catch( IllegalArgumentException x )
+	{
+	// Most likely this is a signal that's not supported on this
+	// platform or with the JVM as it is currently configured
+	throw x;
+	}
+	catch( Throwable x )
+	{
+	// We may have a serious problem, including missing classes
+	// or changed APIs
+	throw new IllegalArgumentException( "Signal unsupported: "+signalName, x );
+	}
+	}
+	/**
+	* Called by Sun Microsystems' signal trapping routines in the JVM.
+	* @param signal The {@link sun.misc.Signal} that we received
+	**/
+	public void handle( final sun.misc.Signal signal )
+	{
+	// setChanged ensures that notifyObservers actually calls someone. In
+	// simple cases this seems like extra work but in asynchronous designs,
+	// setChanged might be called on one thread, and notifyObservers, on
+	// another or only when multiple changes may have been completed (to
+	// wrap up multiple changes in a single notifcation).
+	setChanged();
+	notifyObservers( signal );
+	
+	}
+	
+	
+}

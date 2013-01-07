@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<aspectj>
+
+	<aspects>
+		<!-- declare two existing aspects to the weaver -->
+			<!--aspect name="iep.perf.ConcreteDurationMethod"/-->
+	
+	
+		<concrete-aspect name="iep.perf.aspects.abstractAspects.DurationSimpleMethodValueParametersPertarget"
+			extends="iep.perf.aspects.abstractAspects.AbstractDurationSimpleMethodValueParametersPertarget"
+      >
+			<pointcut name="methods"
+				expression="execution( public * jlp.exemple1.jvm14.Circle.showParameter(String,String))
+       " />
+		</concrete-aspect>
+		
+	</aspects>
+
+	
+
+	<weaver options="-XnoInline -verbose -showWeaveInfo -Xlint:ignore -Xset:weaveJavaPackages=true -Xset:weaveJavaxPackages=true">
+	<exclude within="iep.perf..*"/>
+	<include within="jlp.exemple1.jvm14.*"/>
+	</weaver>
+	
+	
+	
+	<!--include within="jlp..*"/>
+	<include within="iep.perf.jvm14.AbstractIntrospectionClass14"/>
+	
+	<exclude within="iep.perf.jvm14.ConcreteIntrospectionClass14"/>
+	</weaver-->
+
+</aspectj>
